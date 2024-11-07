@@ -1,0 +1,29 @@
+# .gitignore
+
+## Ignore macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Ignore Visual Studio files
+.vs/
+.vscode/
+
+## Ignore NuGet packages
+packages/
+*.nupkg
+
+## Ignore build and debug files
+obj/
+bin/
+Debug/
+Release/
+*.pdb
+*.dll
+
+## Ignore other common files
+*.user
+*.suo
+*.cache
+*.tmp
+*.log

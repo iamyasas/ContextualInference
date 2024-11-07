@@ -1,0 +1,6 @@
+@ContextualInferenceAPI_HostAddress = http://localhost:5252
+
+GET {{ContextualInferenceAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
