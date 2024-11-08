@@ -18,8 +18,6 @@ public class JsonSchemeGenerator
 
         string result = schema.ToString();
 
-        Console.WriteLine(result);
-
         return result;
     }
 }

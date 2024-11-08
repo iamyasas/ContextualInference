@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ContextualInferenceAPI.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAI.Chat;
 
@@ -18,7 +17,7 @@ namespace ContextualInferenceAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult InferenceJsonSchemaBasedOnContext(GenericRequest request)
+        public IActionResult InferenceJsonSchemaBasedOnContext([FromBody] GenericRequest request)
         {
             string? apiKey = configuration["Constants:OPENAI_API_KEY"];
             string? model = configuration["Constants:OPENAI_MODEL"];
@@ -41,7 +40,7 @@ namespace ContextualInferenceAPI.Controllers
                 Temperature = 0.1f,
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                     jsonSchemaFormatName: "GenericJsonSchema",
-                    jsonSchema: BinaryData.FromString(request.ResponseJsonSchema),
+                    jsonSchema: BinaryData.FromString(request.ResponseJsonSchema.RootElement.ToString()),
                     jsonSchemaIsStrict: true
                 )
             };
