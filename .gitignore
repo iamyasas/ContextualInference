@@ -27,3 +27,6 @@ Release/
 *.cache
 *.tmp
 *.log
+
+## Ignore appsettings.Development.json for any project
+**/appsettings.Development.json
