@@ -16,6 +16,10 @@ public class JsonSchemeGenerator
         JSchema schema = schemaGenerator.Generate(type);
         schema.AllowAdditionalProperties = false;
 
-        return schema.ToString();
+        string result = schema.ToString();
+
+        Console.WriteLine(result);
+
+        return result;
     }
 }

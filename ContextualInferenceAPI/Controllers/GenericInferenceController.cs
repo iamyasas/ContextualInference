@@ -1,6 +1,6 @@
 using System.Text.Json;
 using ContextualInferenceAPI.Models;
-using ContextualInferenceAPI.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAI.Chat;
 
@@ -8,17 +8,17 @@ namespace ContextualInferenceAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class LocationInferenceController : ControllerBase
+    public class GenericInferenceController : ControllerBase
     {
         private readonly IConfiguration configuration;
 
-        public LocationInferenceController(IConfiguration configuration)
+        public GenericInferenceController(IConfiguration configuration)
         {
             this.configuration = configuration;
         }
 
         [HttpPost]
-        public IActionResult InferenceLocationBasedOnContext([FromForm] Dictionary<string, string> context)
+        public IActionResult InferenceJsonSchemaBasedOnContext(GenericRequest request)
         {
             string? apiKey = configuration["Constants:OPENAI_API_KEY"];
             string? model = configuration["Constants:OPENAI_MODEL"];
@@ -28,12 +28,11 @@ namespace ContextualInferenceAPI.Controllers
                 return Problem("An unexpected error occured.", statusCode: StatusCodes.Status500InternalServerError);
             }
 
-            var prompt = string.Join(", ", context.Select(kv => $"{kv.Key}: {kv.Value}"));
+            var prompt = string.Join(", ", request.Context.Select(kv => $"{kv.Key}: {kv.Value}"));
 
             ChatClient client = new ChatClient(model, apiKey);
 
-            List<ChatMessage> messages =
-            [
+            List<ChatMessage> messages = [
                 new UserChatMessage(prompt)
             ];
 
@@ -41,8 +40,8 @@ namespace ContextualInferenceAPI.Controllers
             {
                 Temperature = 0.1f,
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                    jsonSchemaFormatName: nameof(LocationInfo),
-                    jsonSchema: BinaryData.FromString(JsonSchemeGenerator.GenerateJsonSchema(typeof(LocationInfo))),
+                    jsonSchemaFormatName: "GenericJsonSchema",
+                    jsonSchema: BinaryData.FromString(request.ResponseJsonSchema),
                     jsonSchemaIsStrict: true
                 )
             };
@@ -51,9 +50,9 @@ namespace ContextualInferenceAPI.Controllers
 
             string response = completion.Content[0].Text;
 
-            LocationInfo? locationInfo = JsonSerializer.Deserialize<LocationInfo>(response);
+            JsonDocument jsonDocument = JsonDocument.Parse(response);
 
-            return Ok(locationInfo);
+            return Ok(jsonDocument.RootElement);
         }
     }
 }
