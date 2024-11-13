@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ContextualInferenceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using OpenAI.Chat;
 
 namespace ContextualInferenceAPI.Controllers
@@ -26,32 +27,40 @@ namespace ContextualInferenceAPI.Controllers
             {
                 return Problem("An unexpected error occured.", statusCode: StatusCodes.Status500InternalServerError);
             }
+            var prompt = JObject.FromObject(request);
 
-            var prompt = string.Join(", ", request.Context.Select(kv => $"{kv.Key}: {kv.Value}"));
+            if (string.IsNullOrWhiteSpace(request.Instructions))
+            {
+                prompt["Instructions"] = "Complete all fields in the 'ResponseSchema' accurately based on the provided descriptions and 'Context'. " +
+                                         "Each field's description specifies the intended type of information and purpose. " +
+                                         "Ensure the generated values align with these descriptions.";
+            }
+
+            Console.WriteLine(prompt.ToString());
 
             ChatClient client = new ChatClient(model, apiKey);
 
             List<ChatMessage> messages = [
-                new UserChatMessage(prompt)
+                new UserChatMessage(prompt.ToString())
             ];
 
-            ChatCompletionOptions options = new ChatCompletionOptions()
+            var options = new ChatCompletionOptions()
             {
                 Temperature = 0.1f,
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                    jsonSchemaFormatName: "GenericJsonSchema",
-                    jsonSchema: BinaryData.FromString(request.ResponseJsonSchema.RootElement.ToString()),
+                    jsonSchemaFormatName: "DynamicJsonSchema",
+                    jsonSchema: BinaryData.FromString(request.ResponseSchema.ToString()),
                     jsonSchemaIsStrict: true
                 )
             };
 
             ChatCompletion completion = client.CompleteChat(messages, options);
 
-            string response = completion.Content[0].Text;
+            var completedDataJson = JObject.Parse(completion.Content[0].Text);
 
-            JsonDocument jsonDocument = JsonDocument.Parse(response);
+            Console.WriteLine(JObject.FromObject(completion.Usage).ToString());
 
-            return Ok(jsonDocument.RootElement);
+            return Ok(completedDataJson);
         }
     }
 }
